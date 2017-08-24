@@ -1,6 +1,6 @@
 # Anomalous time-series
 
-    UNFINISH TANSLATION
+    UNFINISHED TRANSLATION
 
 Source: [robjhyndman/anomalous](https://github.com/robjhyndman/anomalous) R package
 
