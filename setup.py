@@ -39,7 +39,7 @@ class BaseLintCommand(Command):
         sys.exit(subprocess.call(r'''
         set -eu
         upstream="$(git remote -v |
-                    awk '/[@\/]git\.metronlab\.com[:\/]jose\.lopez\/%s[\. ]/{ print $1; exit }')"
+                    awk '/[@\/]github\.com[:\/lopezco\/%s[\. ]/{ print $1; exit }')"
         git fetch -q $upstream v3
         best_ancestor=$(git merge-base HEAD refs/remotes/$upstream/master)
         .travis/check_pylint_diff $best_ancestor
@@ -145,20 +145,7 @@ if not release:
     return FULLVERSION
 
 
-_DEFAULT_CONFIG = dict(NAME='metron-package',
-                       AUTHOR='METRON',
-                       PACKAGES=find_packages(),
-                       DESCRIPTION='Metron package.',
-                       URL='http://www.metronlab.com',
-                       DOWNLOAD_URL='http://www.metronlab.com',
-                       LICENSE='PRIVATE',
-                       AUTHOR_EMAIL='tech@metronlab.com',
-                       VERSION='1.0.0',
-                       PACKAGE_DATA={},
-                       REQUIREMENTS_FILES=[],
-                       KEYWORDS=(),
-                       IS_RELEASE=False,
-                       PACKAGE_DIRECTORY=".")
+_DEFAULT_CONFIG = {}
 
 
 def setup_package(**kwargs):
