@@ -1,13 +1,22 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from anomalous.utils.poly import Poly
-from anomalous.utils.misc import run_length_encoding
+
 from statsmodels.formula.api import ols
 from scipy.stats import gaussian_kde
 from scipy.stats import norm
 from scipy.stats import boxcox_normmax
 from statsmodels.sandbox.gam import AdditiveModel
+
+from anomalous.utils.poly import Poly
+from anomalous.utils.misc import run_length_encoding, arg_longest_not_null
+
+try:
+    from entropy import spectral_entropy
+except ImportError:
+    ENTROPY_PACKAGE_AVAILABLE = False
+else:
+    ENTROPY_PACKAGE_AVAILABLE = True
 
 # features_hyndman
 # https://github.com/robjhyndman/anomalous/blob/master/R/tsmeasures.R
@@ -188,7 +197,7 @@ def kullback_leibler_score(x, window, threshold=None):
     len_x = len(x)
 
     if len_x <= (2 * window):
-        raise Exception("Cannot compute KLscore when the length is too small.")
+        raise ValueError("Cannot compute KLscore when the length is too small.")
 
     dens_mat = np.zeros((len_x, gw))
 
@@ -219,12 +228,13 @@ def boxcox_optimal_lambda(x):
 
 
 # TODO: implement Spectral Entropy
-def entropy(x):
+def entropy(x, freq=1, normalize=False):
     """
     Spectral Entropy
     """
     try:
-        result = np.nan  # ForeCA::spectral_entropy(na.contiguous(x))[1], silent=True)
+        start, stop = arg_longest_not_null(x)
+        result = spectral_entropy(x[start:stop], sf=freq, method='welch', normalize=normalize)
     except Exception:
         result = np.nan
     finally:
@@ -274,11 +284,11 @@ def ts_measures_series(x, freq=1, normalize=True, width=None, window=None):
         window = width
 
     if (width <= 1) | (window <= 1):
-        raise Exception("window widths should be greater than 1.")
+        raise ValueError("Window widths should be greater than 1.")
 
     # Remove columns containing all NAs
     if x.isnull().all():
-        raise Exception("All values are null")
+        raise ValueError("All values are null")
 
     if normalize:
         x = (x - np.min(x)) / (np.max(x) - np.min(x))
@@ -287,7 +297,8 @@ def ts_measures_series(x, freq=1, normalize=True, width=None, window=None):
 
     measures = dict()
     measures['lumpiness'] = lumpiness(x, width=width)
-    # measures['entropy'] = entropy(x)
+    if ENTROPY_PACKAGE_AVAILABLE:
+        measures['entropy'] = entropy(x, freq=freq, normalize=False)
     measures['ACF1'] = first_order_autocorrelation(x)
     measures['lshift'] = rolling_level_shift(trimx, width=width)
     measures['vchange'] = rolling_variance_change(trimx, width=width)
@@ -296,7 +307,7 @@ def ts_measures_series(x, freq=1, normalize=True, width=None, window=None):
     #  measures['mean'] = np.mean(x)
     #  measures['var'] = np.var(x)
 
-    varts = trend_seasonality_spike_strength(x, freq)
+    varts = trend_seasonality_spike_strength(x, freq=freq)
     measures['trend'] = varts['trend']
     measures['linearity'] = varts['linearity']
     measures['curvature'] = varts['curvature']

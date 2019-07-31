@@ -30,3 +30,13 @@ def hysteresis(x, th_lo, th_hi, initial=False):
     # from 0 to len(x)
     cnt = np.cumsum(lo_or_hi)
     return np.where(cnt, hi[ind[cnt-1]], initial)
+
+
+def arg_longest_not_null(x):
+    # pad with np.nan while finding where null
+    m = np.concatenate(( [True], np.isnan(x), [True] ))
+    # Start-stop limits
+    ss = np.flatnonzero(m[1:] != m[:-1]).reshape(-1,2)
+    # Get max interval, interval limits
+    start, stop = ss[(ss[:,1] - ss[:,0]).argmax()]
+    return start, stop
